@@ -7,7 +7,9 @@ A web-based tool for monitoring and inspecting Lightweight Communications and Ma
 
 
 ## Usage and Features
-
+```python3
+python3 lcm_monitor.py
+```
 
 ## Authors and maintainers
 The current maintainer of this project is Shaw Sun. Please direct all questions regarding support, contributions, and issues to the maintainer. 
