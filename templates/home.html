@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="container mt-4">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th scope="col">CHANNEL</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Link</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>MBOT_APRILTAG_ARRAY</td>
+                    <td id="apriltag_status"></td>
+                    <td>
+                        <a class="link-opacity-100-hover" href="/apriltag_msg">Link</a>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Placeholder</td>
+                    <td></td>
+                    <td>
+                        <a class="link-opacity-100-hover" href="#">Link</a>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Placeholder</td>
+                    <td></td>
+                    <td>
+                        <a class="link-opacity-100-hover" href="#">Link</a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <script>
+        async function fetchStatus() {
+            try {
+                const response = await fetch('/status');
+                if (!response.ok) {
+                    throw new Error('Network response was not ok ' + response.statusText);
+                }
+                const data = await response.json();
+                const statusElement = document.getElementById('apriltag_status');
+                if (data.apriltag_status === "on") {
+                    statusElement.textContent = "on";
+                    statusElement.style.color = "green";
+                } else {
+                    statusElement.textContent = "off";
+                    statusElement.style.color = "red";
+                }
+            } catch (error) {
+                console.error('Fetch error:', error);
+                document.getElementById('apriltag_status').textContent = 'Error';
+                document.getElementById('apriltag_status').style.color = "black";
+            }
+        }
+
+        // Fetch status every 3 seconds
+        setInterval(fetchStatus, 3000); 
+
+        // Fetch status on page load
+        window.onload = fetchStatus; 
+    </script>
+{% endblock %}
