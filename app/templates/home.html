@@ -15,7 +15,7 @@
                     <td>MBOT_APRILTAG_ARRAY</td>
                     <td id="apriltag_status"></td>
                     <td>
-                        <a class="link-opacity-100-hover" href="/apriltag_msg">Link</a>
+                        <a class="link-opacity-100-hover" href="/apriltag/board">Link</a>
                     </td>
                 </tr>
                 <tr>
@@ -38,7 +38,7 @@
     <script>
         async function fetchStatus() {
             try {
-                const response = await fetch('/status');
+                const response = await fetch('/apriltag/status');
                 if (!response.ok) {
                     throw new Error('Network response was not ok ' + response.statusText);
                 }

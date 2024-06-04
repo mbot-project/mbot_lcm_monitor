@@ -22,7 +22,7 @@
     <script>
         async function fetchApriltagData() {
             try {
-                const response = await fetch('/apriltag_data');
+                const response = await fetch('/apriltag/data');
                 if (!response.ok) {
                     throw new Error('Network response was not ok ' + response.statusText);
                 }
@@ -32,10 +32,7 @@
                 tbody.innerHTML = ''; // Clear existing data
 
                 // Update the status element based on the response
-                if (data.array_size === 0) {
-                    statusElement.textContent = "No detection!";
-                    statusElement.className = "alert alert-warning";
-                } else {
+                if (data.array_size > 0) {
                     statusElement.textContent = "Tag detected!";
                     statusElement.className = "alert alert-success";
 
@@ -56,6 +53,9 @@
                             tbody.appendChild(row);
                         });
                     }
+                } else {
+                    statusElement.textContent = "No detection!";
+                    statusElement.className = "alert alert-warning";
                 }
             } catch (error) {
                 console.error('Fetch error:', error);
@@ -65,8 +65,8 @@
             }
         }
 
-        // Fetch status every 1 second
-        setInterval(fetchApriltagData, 1000); 
+        // Fetch status every 0.5 second
+        setInterval(fetchApriltagData, 500); 
 
         // Fetch status on page load
         window.onload = fetchApriltagData; 
