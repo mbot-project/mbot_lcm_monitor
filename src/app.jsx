@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MBot } from "mbot-js-api";
+
 
 function isDeepEqual(data1, data2) {
   if (data1 === data2) {
@@ -33,36 +33,55 @@ function isDeepEqual(data1, data2) {
 }
 
 
-function ChannelStatus({channel, dtype}) {
+function ChannelStatus({ channel, dtype, mbot }) {
+  const [lcmData, setData] = useState(null);
+  const [count, setCount] = useState(0);
+
+  // This lets the React App start and cleanup the subscriber properly.
+  useEffect(() => {
+    // Subscribe to the data.
+    mbot.subscribe(channel, (data) => {
+      setCount(count => count + 1);
+    }).then(() => {
+      console.log('Successfully subscribed');
+    }).catch((error) => {
+      console.error('Subscription failed', error);
+    });
+
+    // Return the cleanup function which stops the rerender.
+    return () => {
+      mbot.unsubscribe(channel).then(() => {
+        console.log('Successfully unsubscribed');
+      });
+    }
+  }, [lcmData, setData]);
+
   return (
     <tr>
       <td>{channel}</td>
       <td>{dtype}</td>
       <td>tmp</td>
-      <td>tmp</td>
+      <td>{count}</td>
     </tr>
   )
 }
 
 
-function ChannelList({ channels }) {
+function ChannelList({ channels, mbot }) {
     if (!channels) {
       return null;
     }
     return (
       <>
         {channels.map((item, index) => (
-          <ChannelStatus key={index} channel={item.channel} dtype={item.dtype}/>
+          <ChannelStatus key={index} channel={item.channel} dtype={item.dtype} mbot={mbot}/>
         ))}
       </>
     )
 }
 
-const mbotIP = window.location.host.split(":")[0]  // Grab the IP from which this page was accessed.
-const mbot = new MBot(mbotIP);
 
-
-export default function LCMMonitorApp() {
+export default function LCMMonitorApp({ mbot }) {
   const [channels, setChannels] = useState(null);
 
   // This lets the React App start and cleanup the timer properly.
@@ -94,7 +113,7 @@ export default function LCMMonitorApp() {
           </tr>
         </thead>
         <tbody id="status-table-body">
-            <ChannelList channels={channels}/>
+            <ChannelList channels={channels} mbot={mbot}/>
         </tbody>
       </table>
 
