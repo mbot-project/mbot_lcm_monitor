@@ -17,4 +17,23 @@ python3 main.py
 
 
 ## Authors and maintainers
-The current maintainer of this project is Shaw Sun. Please direct all questions regarding support, contributions, and issues to the maintainer. 
+The current maintainer of this project is Shaw Sun. Please direct all questions regarding support, contributions, and issues to the maintainer.
+
+## Node App with MBot Bridge
+
+To use the pure Node.js + React application, which uses the MBot Bridge, the MBot Javascript API must be linked. To do this, clone the `mbot_bridge` package then do:
+```bash
+cd mbot_bridge/mbot_js
+npm link
+```
+Then, in this repository, do:
+```bash
+npm install
+npm link mbot-js-api
+```
+To test locally, do:
+```bash
+npm run dev
+```
+
+**Note:** The MBot Bridge Server must be running for this to work. See instructions for running the server [here](https://github.com/mbot-project/mbot_bridge/).
