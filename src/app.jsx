@@ -42,17 +42,13 @@ function ChannelStatus({ channel, dtype, mbot }) {
     // Subscribe to the data.
     mbot.subscribe(channel, (data) => {
       setCount(count => count + 1);
-    }).then(() => {
-      console.log('Successfully subscribed');
     }).catch((error) => {
-      console.error('Subscription failed', error);
+      console.error('Subscription failed for channel', channel, error);
     });
 
     // Return the cleanup function which stops the rerender.
     return () => {
-      mbot.unsubscribe(channel).then(() => {
-        console.log('Successfully unsubscribed');
-      });
+      mbot.unsubscribe(channel).catch((err) => console.warn(err));
     }
   }, [lcmData, setData]);
 
@@ -83,26 +79,48 @@ function ChannelList({ channels, mbot }) {
 
 export default function LCMMonitorApp({ mbot }) {
   const [channels, setChannels] = useState(null);
+  const [hostname, setHostname] = useState("mbot-???");
+  const [connected, setConnected] = useState(false);
 
   // This lets the React App start and cleanup the timer properly.
   useEffect(() => {
-    // Check for new channels every 2 seconds.
-    const timerId = setInterval(() => {
-      mbot.readChannels((chs) => {
-        // Update the channels only if the have changed to prevent a rerender.
-        if (!isDeepEqual(channels, chs)) {
-          setChannels(chs);
-        }
-      });
-    }, 2000);
+    let timerId = null;
+
+    // Read the hostname. Start the timer to read the channels only if reading
+    // the hostname throws no errors.
+    mbot.readHostname().then((name) => {
+      setHostname(name);
+      setConnected(true);
+
+      // Check for new channels every 2 seconds.
+      timerId = setInterval(() => {
+        mbot.readChannels().then((chs) => {
+          // Update the channels only if the have changed to prevent a rerender.
+          if (!isDeepEqual(channels, chs)) {
+            setChannels(chs);
+          }
+        }).catch((err) => {
+          console.warn(err);
+          // If we failed to read the channels, set as disconnected.
+          if (connected) setConnected(false);
+          if (channels) setChannels(null);
+        });
+      }, 2000);
+    }).catch((err) => setConnected(false));
 
     // Return the cleanup function which stops the rerender.
-    return () => clearInterval(timerId);
-  }, [channels, setChannels]);
+    return () => {if (timerId) clearInterval(timerId)};
+  }, [channels, setChannels, hostname, setHostname, connected, setConnected]);
 
   return (
     <div className="container">
-      <h2 className="mt-5">Status</h2>
+      <div className="status-bar">
+        <h2>{hostname.toUpperCase()}</h2>
+        <span className={"status " + (connected ? "valid" : "invalid")}>
+          {connected ? "Connected" : "Not Connected"}
+        </span>
+      </div>
+
       <table className="table table-striped mt-3">
         <thead className="thead-dark">
           <tr>
@@ -123,41 +141,3 @@ export default function LCMMonitorApp({ mbot }) {
     </div>
   );
 }
-
-// document.addEventListener("DOMContentLoaded", function() {
-//     // var socket = io();
-//     // socket.on('status_update', function(status) {
-//     //     document.getElementById('status-table-body').innerHTML = generateStatusHTML(status.status);
-//     //     document.getElementById('decoded-messages').innerHTML = generateDecodedMessagesHTML(status.decoded_status);
-//     // });
-
-//     function generateStatusHTML(status) {
-//         let html = '';
-//         status.forEach(function(item) {
-//             html += `<tr>
-//                 <td>${item.channel}</td>
-//                 <td>${item.type}</td>
-//                 <td>${item.rate.toFixed(2)}</td>
-//                 <td>${item.total_messages}</td>
-//             </tr>`;
-//         });
-//         return html;
-//     }
-
-//     function generateDecodedMessagesHTML(decoded_status) {
-//         let html = '';
-//         decoded_status.forEach(function(decoded) {
-//             html += `<div class="card mb-3">
-//                         <div class="card-header">
-//                             ${decoded.channel}
-//                         </div>
-//                         <div class="card-body">`;
-//             decoded.decoded_message.forEach(function(line) {
-//                 html += `<pre>${line}</pre>`;
-//             });
-//             html += `  </div>
-//                      </div>`;
-//         });
-//         return html;
-//     }
-// });

@@ -1,0 +1,27 @@
+.status-bar {
+  display: flex; /* Use flexbox for layout */
+  justify-content: space-between; /* Space between items will push one to the left and one to the right */
+  align-items: center; /* Vertically center align items */
+  padding: 8px; /* Give some padding within the status bar */
+  margin-top: 2em;
+}
+
+.status-bar > h2 {
+  margin: 0; /* Reset margin for paragraph tag */
+}
+
+.status {
+  display: inline-block; /* Allows span to have width and height */
+  padding: 0.5em 1em;
+  color: white;
+  width: 140px;
+  text-align: center;
+}
+
+.valid {
+  background-color: green; /* Green background for valid status */
+}
+
+.invalid {
+  background-color: red; /* Red background for invalid status */
+}
