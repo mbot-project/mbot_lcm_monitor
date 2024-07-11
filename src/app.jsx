@@ -34,13 +34,42 @@ function isDeepEqual(data1, data2) {
 
 
 function ChannelData({ data, indent = 0 }) {
-  const formatValue = (value, indentLevel) => {
-    if (typeof value === 'object' && value !== null) {
+  function formatArray(array, indentLevel, maxLength = 12) {
+    if (array.length > maxLength) {
+      const halfMax = Math.floor(maxLength / 2);
+      array = [...array.slice(0, halfMax), " ... ", ...array.slice(-halfMax)];
+    }
+    const formattedArray = array.map((item, index) => {
+      if (Array.isArray(item)) {
+        return `Array(${item.length})`;
+      } else if (typeof item === 'object' && item !== null) {
+        return `{...}`;
+      } else if (typeof item === 'number') {
+        return Number.isInteger(item) ? item : item.toFixed(4);
+      } else if (typeof item === 'string') {
+        return item;
+      } else {
+        return JSON.stringify(item);
+      }
+    });
+
+    return (
+      <div style={{ marginLeft: `${(indentLevel + 1) * 20}px` }}>
+        [{formattedArray.join(', ')}]
+      </div>);
+  };
+
+  function formatValue(value, indentLevel) {
+    if (Array.isArray(value)) {
+      return formatArray(value, indentLevel);
+    } else if (typeof value === 'object' && value !== null) {
       return (
         <div style={{ marginLeft: `${indentLevel * 20}px` }}>
           <ChannelData data={value} indent={indentLevel + 1} />
         </div>
       );
+    } else if (typeof value === 'number') {
+        return <span>{Number.isInteger(value)? value : value.toFixed(4)}</span>;
     }
     return <span>{JSON.stringify(value)}</span>;
   };
@@ -58,7 +87,7 @@ function ChannelData({ data, indent = 0 }) {
 
 
 function ChannelStatus({ channel, dtype, mbot }) {
-  const [lcmData, setData] = useState("no data");
+  const [lcmData, setData] = useState({});
   const [count, setCount] = useState(0);
   const [open, setOpen] = useState(false);
 
@@ -125,7 +154,7 @@ export default function LCMMonitorApp({ mbot }) {
     // the hostname throws no errors.
     mbot.readHostname().then((name) => {
       setHostname(name);
-      setConnected(true);
+      if (!connected) setConnected(true);
 
       // Check for new channels every 2 seconds.
       timerId = setInterval(() => {
@@ -141,7 +170,7 @@ export default function LCMMonitorApp({ mbot }) {
           if (channels) setChannels(null);
         });
       }, 2000);
-    }).catch((err) => setConnected(false));
+    }).catch((err) => {if (connected) setConnected(false)});
 
     // Return the cleanup function which stops the rerender.
     return () => {if (timerId) clearInterval(timerId)};
@@ -169,10 +198,6 @@ export default function LCMMonitorApp({ mbot }) {
             <ChannelList channels={channels} mbot={mbot}/>
         </tbody>
       </table>
-
-      <div id="decoded-messages" className="mt-5">
-        {/* <!-- Decoded messages will be dynamically inserted here --> */}
-      </div>
     </div>
   );
 }
