@@ -25,3 +25,9 @@
 .invalid {
   background-color: red; /* Red background for invalid status */
 }
+
+tr.lcm-data-row > td {
+  background-color: #f8f9fa;
+  padding-left: 1em;
+  padding-right: 1em;
+}

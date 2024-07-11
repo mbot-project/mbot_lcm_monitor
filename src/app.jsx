@@ -33,15 +33,41 @@ function isDeepEqual(data1, data2) {
 }
 
 
+function ChannelData({ data, indent = 0 }) {
+  const formatValue = (value, indentLevel) => {
+    if (typeof value === 'object' && value !== null) {
+      return (
+        <div style={{ marginLeft: `${indentLevel * 20}px` }}>
+          <ChannelData data={value} indent={indentLevel + 1} />
+        </div>
+      );
+    }
+    return <span>{JSON.stringify(value)}</span>;
+  };
+
+  return (
+    <div>
+      {Object.keys(data).map((key) => (
+        <div key={key} style={{ marginLeft: `${indent * 20}px` }}>
+          <strong>{key}:</strong> {formatValue(data[key], indent)}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+
 function ChannelStatus({ channel, dtype, mbot }) {
-  const [lcmData, setData] = useState(null);
+  const [lcmData, setData] = useState("no data");
   const [count, setCount] = useState(0);
+  const [open, setOpen] = useState(false);
 
   // This lets the React App start and cleanup the subscriber properly.
   useEffect(() => {
     // Subscribe to the data.
-    mbot.subscribe(channel, (data) => {
+    mbot.subscribe(channel, (msg) => {
       setCount(count => count + 1);
+      setData(msg.data);
     }).catch((error) => {
       console.error('Subscription failed for channel', channel, error);
     });
@@ -50,15 +76,24 @@ function ChannelStatus({ channel, dtype, mbot }) {
     return () => {
       mbot.unsubscribe(channel).catch((err) => console.warn(err));
     }
-  }, [lcmData, setData]);
+  }, []);
 
   return (
-    <tr>
+    <>
+    <tr onClick={() => setOpen(!open)}>
       <td>{channel}</td>
       <td>{dtype}</td>
       <td>tmp</td>
       <td>{count}</td>
     </tr>
+    {open && (
+      <tr className="lcm-data-row">
+        <td colSpan="4">
+          <ChannelData data={lcmData} />
+        </td>
+      </tr>
+    )}
+    </>
   )
 }
 
@@ -121,7 +156,7 @@ export default function LCMMonitorApp({ mbot }) {
         </span>
       </div>
 
-      <table className="table table-striped mt-3">
+      <table className="table mt-3">
         <thead className="thead-dark">
           <tr>
             <th>Channel</th>
