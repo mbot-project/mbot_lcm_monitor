@@ -3,5 +3,6 @@ __pycache__/
 *.pyc
 
 # Node.js
+dist/
 node_modules/
 package-lock.json
