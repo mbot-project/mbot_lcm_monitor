@@ -89,14 +89,39 @@ function ChannelData({ data, indent = 0 }) {
 function ChannelStatus({ channel, dtype, mbot }) {
   const [lcmData, setData] = useState({});
   const [count, setCount] = useState(0);
+  const [rate, setRate] = useState("??");
   const [open, setOpen] = useState(false);
+  // Variables to help compute the state.
+  let rates = [];
+  let last_time = 0;
+  const NUM_RATES = 4;
 
   // This lets the React App start and cleanup the subscriber properly.
   useEffect(() => {
     // Subscribe to the data.
     mbot.subscribe(channel, (msg) => {
+      // Update the count and the data.
       setCount(count => count + 1);
       setData(msg.data);
+      // Compute the rate of the messages on this channel.
+      if (msg.data.utime) {
+        if (last_time > 0) {
+          // If we have at least one message, add the difference to the queue.
+          rates.push(msg.data.utime - last_time);
+        }
+
+        // If we have acquired enough rate data...
+        if (rates.length > NUM_RATES) {
+          rates.shift();  // Remove the oldest value.
+          // Get the average time between messages in seconds.
+          const ave_secs = rates.reduce((a, b) => a + b) / rates.length / 1e6;
+          // Set the rate in Hz.
+          setRate((1. / ave_secs).toFixed(2));
+        }
+
+        // Save the last time.
+        last_time = msg.data.utime;
+      }
     }).catch((error) => {
       console.error('Subscription failed for channel', channel, error);
     });
@@ -112,7 +137,7 @@ function ChannelStatus({ channel, dtype, mbot }) {
     <tr onClick={() => setOpen(!open)}>
       <td>{channel}</td>
       <td>{dtype}</td>
-      <td>tmp</td>
+      <td>{rate}</td>
       <td>{count}</td>
     </tr>
     {open && (
@@ -190,8 +215,8 @@ export default function LCMMonitorApp({ mbot }) {
           <tr>
             <th>Channel</th>
             <th>Type</th>
-            <th>Rate</th>
-            <th>Total Messages</th>
+            <th>Rate (Hz)</th>
+            <th>Message Count</th>
           </tr>
         </thead>
         <tbody id="status-table-body">
