@@ -1,39 +1,96 @@
 # MBot LCM Monitor
-> Currently only support mbot apriltag message.
 
-## Description
 A web-based tool for monitoring and inspecting Lightweight Communications and Marshalling (LCM) messages in real-time. This system offers functionality similar to LCM Spy, utilizing web technologies for enhanced usability and accessibility.
 
+## Prerequisites
+
+The web-based LCM Monitor depends on the [MBot Bridge Server and API](https://github.com/mbot-project/mbot_bridge/). The server must be running in subscribe-all mode in order to display all the messages.
+
+*Note:* If the MBot Bridge Server is configured to only subscribe to certain channels, only those will be displayed on the LCM Monitor.
+
 ## Installation
+
+This installation assumes that you have already installed the [MBot Web App](https://github.com/mbot-project/mbot_web_app), and that it is accessible by going to `http://[MBOT_IP]` in your browser.
+
+### Installing from the Latest Release (Recommended)
+
+You can install the LCM Monitor so that it is accessible at the address `http://[MBOT_IP]/spy`, where `[MBOT_IP]` is replaced with your robot's IP address.
+
+First, download the tar file from the [latest release](https://github.com/mbot-project/mbot_lcm_monitor/releases), then do:
 ```bash
-sudo apt install python3-flask-socketio
+tar -xvzf mbot_lcm_monitor-[VERSION].tar.gz
+mkdir /data/www/spy  # if this is your first time installing.
+sudo cp -r mbot_lcm_monitor-[VERSION]/* /data/www/spy/
 ```
 
-## Usage and Features
-```python3
-python3 main.py
-```
-- The main.py is the entry point.
-
-
-## Authors and maintainers
-The current maintainer of this project is Shaw Sun. Please direct all questions regarding support, contributions, and issues to the maintainer.
-
-## Node App with MBot Bridge
-
-To use the pure Node.js + React application, which uses the MBot Bridge, the MBot Javascript API must be linked. To do this, clone the `mbot_bridge` package then do:
+#### Configuring Nginx
+If this is your first time setting up the LCM monitor, you must configure Nginx to find it. Open the configuration file:
 ```bash
-cd mbot_bridge/mbot_js
-npm link
+sudo nano /etc/nginx/nginx.conf
 ```
-Then, in this repository, do:
+Then, edit the `server` block within the `http` block, at the end of the file, to add the following `location` configuration:
 ```bash
-npm install
-npm link mbot-js-api
+location /spy {
+    alias /data/www/spy/;
+    index index.html index.htm;
+    try_files $uri $uri/ =404;
+}
 ```
-To test locally, do:
+The whole `server` block (at the end of the `http` block) looks like this:
+```bash
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name localhost home.bot www.home.mbot;
+
+    location / {
+        root /data/www/mbot;
+        index index.html index.htm;
+        try_files $uri $uri/ =404;
+    }
+    # Spy application location block
+    location /spy {
+        alias /data/www/spy/;
+        index index.html index.htm;
+        try_files $uri $uri/ =404;
+    }
+
+    # Other configurations...
+}
+```
+To see the changes, restart NGINX:
+```bash
+sudo systemctl restart nginx.service
+```
+
+### Installing from Source
+
+To install from source, you will need to [install NPM](https://github.com/mbot-project/mbot_web_app?tab=readme-ov-file#dependencies) on the Raspberry Pi.
+
+1. Clone [MBot Bridge](https://github.com/mbot-project/mbot_bridge/). Then do:
+  ```bash
+  cd mbot_bridge/mbot_js
+  npm install
+  npm link
+  ```
+2. In this repo, do:
+  ```bash
+  npm install
+  npm link mbot-js-api
+  ```
+
+To run in development mode, you can do:
 ```bash
 npm run dev
 ```
 
-**Note:** The MBot Bridge Server must be running for this to work. See instructions for running the server [here](https://github.com/mbot-project/mbot_bridge/).
+To build and install the app, do:
+```bash
+npm run build
+mkdir /data/www/spy  # if this is your first time installing.
+sudo cp -r dist/* /data/www/spy/
+```
+Then, follow the same steps to configure Nginx as [above](#configuring-nginx).
+
+## Authors and maintainers
+The current maintainer of this project is Jana Pavlasek. Please direct all questions regarding support, contributions, and issues to the maintainer.
