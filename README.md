@@ -19,9 +19,10 @@ You can install the LCM Monitor so that it is accessible at the address `http://
 First, download the tar file from the [latest release](https://github.com/mbot-project/mbot_lcm_monitor/releases), then do:
 ```bash
 tar -xvzf mbot_lcm_monitor-[VERSION].tar.gz
-mkdir /data/www/spy  # if this is your first time installing.
-sudo cp -r mbot_lcm_monitor-[VERSION]/* /data/www/spy/
+cd mbot_lcm_monitor-[VERSION]/
+./deploy_app.sh --no-rebuild
 ```
+Follow the printed instructions (or the ones in `mbot_lcm_monitor-[VERSION]/README.txt`) to configure with NGINX.
 
 #### Configuring Nginx
 If this is your first time setting up the LCM monitor, you must configure Nginx to find it. Open the configuration file:
@@ -91,6 +92,14 @@ mkdir /data/www/spy  # if this is your first time installing.
 sudo cp -r dist/* /data/www/spy/
 ```
 Then, follow the same steps to configure Nginx as [above](#configuring-nginx).
+
+## Generating a new release
+
+To generate a new release, do:
+```bash
+./scripts/generate_release.sh -v vX.Y.Z
+```
+Substitute the correct version for `vX.Y.Z`. Save the generated file `mbot_lcm_monitor-vX.Y.Z.tar.gz` to upload to the release.
 
 ## Authors and maintainers
 The current maintainer of this project is Jana Pavlasek. Please direct all questions regarding support, contributions, and issues to the maintainer.
