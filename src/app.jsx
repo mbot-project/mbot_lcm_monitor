@@ -1,36 +1,4 @@
-import { useState, useEffect } from 'react';
-
-
-function isDeepEqual(data1, data2) {
-  if (data1 === data2) {
-    return true;
-  }
-
-  if (!data1 || !data2) {
-    return false;
-  }
-
-  if (data1.length !== data2.length) {
-    return false;
-  }
-
-  const chs1 = data1.map((item, index) => (item.channel));
-  const chs2 = data2.map((item, index) => (item.channel));
-
-  for (const key of chs1) {
-    if (!chs2.includes(key)) {
-      return false;
-    }
-  }
-
-  for (const key of chs2) {
-    if (!chs1.includes(key)) {
-      return false;
-    }
-  }
-
-  return true;
-}
+import { useState, useEffect, useRef } from 'react';
 
 
 function ChannelData({ data, indent = 0 }) {
@@ -91,17 +59,28 @@ function ChannelStatus({ channel, dtype, mbot }) {
   const [count, setCount] = useState(0);
   const [rate, setRate] = useState("??");
   const [open, setOpen] = useState(false);
-  // Variables to help compute the state.
-  let rates = [];
-  let last_time = 0;
-  const NUM_RATES = 4;
 
   // This lets the React App start and cleanup the subscriber properly.
   useEffect(() => {
+    // Variables to help compute the state.
+    let rates = [];
+    let last_time = 0;
+    const NUM_RATES = 4;
+
+    // Read the data once first because we will have missed the last message.
+    mbot.readData(channel).then((val) => {
+      // Initialize all the data to this first message.
+      setCount(1);
+      setData(val);
+      last_time = val.utime;
+    }).catch((error) => {
+      console.warn('Read failed for channel', channel, error);
+    });
+
     // Subscribe to the data.
     mbot.subscribe(channel, (msg) => {
       // Update the count and the data.
-      setCount(count => count + 1);
+      setCount(c => c + 1);
       setData(msg.data);
       // Compute the rate of the messages on this channel.
       if (msg.data.utime) {
@@ -130,7 +109,7 @@ function ChannelStatus({ channel, dtype, mbot }) {
     return () => {
       mbot.unsubscribe(channel).catch((err) => console.warn(err));
     }
-  }, []);
+  }, [channel]);
 
   return (
     <>
@@ -167,39 +146,64 @@ function ChannelList({ channels, mbot }) {
 
 
 export default function LCMMonitorApp({ mbot }) {
-  const [channels, setChannels] = useState(null);
+  const [channels, setChannels] = useState([]);
   const [hostname, setHostname] = useState("mbot-???");
   const [connected, setConnected] = useState(false);
+  const currentChannels = useRef([]);  // Nonreactive storage of current values.
 
   // This lets the React App start and cleanup the timer properly.
   useEffect(() => {
     let timerId = null;
 
-    // Read the hostname. Start the timer to read the channels only if reading
-    // the hostname throws no errors.
-    mbot.readHostname().then((name) => {
-      setHostname(name);
-      if (!connected) setConnected(true);
-
-      // Check for new channels every 2 seconds.
-      timerId = setInterval(() => {
-        mbot.readChannels().then((chs) => {
-          // Update the channels only if the have changed to prevent a rerender.
-          if (!isDeepEqual(channels, chs)) {
-            setChannels(chs);
+    function updateChannels() {
+      mbot.readChannels().then((chs) => {
+        // Update the channels only if the have changed to prevent a rerender.
+        let newChs = [];
+        for (const ch of chs) {
+          // If there is a channel not included in our current list, keep track of it.
+          if (!currentChannels.current.includes(ch.channel)) {
+            newChs.push(ch);
           }
-        }).catch((err) => {
-          console.warn(err);
-          // If we failed to read the channels, set as disconnected.
-          if (connected) setConnected(false);
-          if (channels) setChannels(null);
-        });
-      }, 2000);
-    }).catch((err) => {if (connected) setConnected(false)});
+        }
+
+        if (newChs.length > 0) {
+          // If we got any new channels, update the channel state.
+          setChannels(currChs => [...currChs, ...newChs]);
+          // Keep track of the channels we are displaying in the non-reactive ref.
+          const newChsList = newChs.map((ch) => ch.channel);
+          currentChannels.current.push(...newChsList);
+        }
+
+        if (!connected) setConnected(true);
+      }).catch((err) => {
+        console.warn(err);
+        // If we failed to read the channels, set as disconnected.
+        if (connected) {
+          setConnected(false);
+          currentChannels.current = [];
+          setChannels([]);
+        }
+      });
+    }
+
+    // Check for the channels once right away.
+    updateChannels();
+
+    // Check for new channels every 2 seconds.
+    timerId = setInterval(() => { updateChannels(); }, 2000);
 
     // Return the cleanup function which stops the rerender.
     return () => {if (timerId) clearInterval(timerId)};
-  }, [channels, setChannels, hostname, setHostname, connected, setConnected]);
+  }, [connected, setConnected, setChannels]);
+
+  // Read the hostname if the backend is connected.
+  useEffect(() => {
+    if (connected) {
+      mbot.readHostname().then((name) => {
+        setHostname(name);
+      });
+    }
+  }, [connected, setHostname]);
 
   return (
     <div className="container">
