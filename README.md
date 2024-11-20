@@ -87,19 +87,21 @@ npm run dev
 
 To build and install the app, do:
 ```bash
-npm run build
-mkdir /data/www/spy  # if this is your first time installing.
-sudo cp -r dist/* /data/www/spy/
+./scripts/deploy_app.sh [--bridge-path PATH/TO/BRIDGE --no-rebuild]
 ```
+If the `--bridge-path` argument is not provided, this will grab the latest compatible release of the [MBot Bridge](https://github.com/mbot-project/mbot_bridge/). If you want to use a local version of the Bridge API, pass the path to your copy of the MBot Bridge repository. Use `--no-rebuild` if you want to skip rebuilding the app and just install.
+
 Then, follow the same steps to configure Nginx as [above](#configuring-nginx).
 
 ## Generating a new release
 
 To generate a new release, do:
 ```bash
-./scripts/generate_release.sh -v vX.Y.Z
+./scripts/generate_release.sh -v vX.Y.Z [-b PATH/TO/BRIDGE]
 ```
 Substitute the correct version for `vX.Y.Z`. Save the generated file `mbot_lcm_monitor-vX.Y.Z.tar.gz` to upload to the release.
+
+The `-b` argument is optional, and lets you pass a path to a local version of the MBot Bridge to compile against. By default, the latest compatible release of the MBot Bridge will be downloaded from source.
 
 ## Authors and maintainers
 The current maintainer of this project is Jana Pavlasek. Please direct all questions regarding support, contributions, and issues to the maintainer.
