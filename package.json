@@ -1,7 +1,7 @@
 {
   "name": "mbot-lcm-monitor",
   "description": "LCM monitor app for the MBot.",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
